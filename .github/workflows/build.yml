@@ -25,7 +25,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run test
       - name: Package (retried because the Gradle download server is flaky)
-        run: for i in 1 2 3 4; do bun run package && exit 0; sleep 20; done; exit 1
+        run: for i in 1 2 3 4 5 6; do bun run package && exit 0; sleep 60; done; exit 1
         env:
           # The Valenced API comes from GitHub Packages; set READ_PACKAGES_TOKEN if the default token is refused.
           GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_TOKEN || github.token }}

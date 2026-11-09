@@ -1,0 +1,42 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;37.0.0'
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+      - run: bun run package
+        env:
+          # The Valenced API comes from GitHub Packages; set READ_PACKAGES_TOKEN if the default token is refused.
+          GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_TOKEN || github.token }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: questify
+          path: build/dist/*.zip
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip=$(ls build/dist/*.zip)
+          tag="v$(jq -r .version plugins/questify/manifest.json)"
+          gh release create "$tag" "$zip" --title "Questify $tag" --notes "Activity quests now use the native heartbeat transport (no logout)." \
+            || gh release upload "$tag" "$zip" --clobber

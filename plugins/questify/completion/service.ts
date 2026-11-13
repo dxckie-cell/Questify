@@ -1,4 +1,3 @@
-import { Dispatcher } from '@valenced/discord/common/flux'
 import { Stores } from '@valenced/discord/flux'
 import { lookupModuleWithImportedPath } from '@valenced/discord/utils/modules/finders'
 import { lookupModule } from '@valenced/modules/finders'
@@ -10,7 +9,7 @@ import { defaults } from '../settings/config'
 import { completionAllowed } from '../settings/warning-policy'
 import { createCompletionController } from './controller'
 import { sendDesktopHeartbeat } from './desktop-heartbeat'
-import { callQuestAction, callQuestHeartbeat } from './requests'
+import { callQuestAction } from './requests'
 import type { Settings } from '../settings/config'
 
 let settings = defaults
@@ -124,35 +123,24 @@ export const completion = createCompletionController({
 		}),
 	heartbeat: (questId, applicationId, terminal) =>
 		request(async () => {
-			const quest = readQuests().quests.find(quest => quest.id === questId)
-			const activity = quest?.tasks.some(task => task.name === 'PLAY_ACTIVITY')
-			// Native transport keeps a 401 from tripping Discord's client-side logout.
-			if (
-				activity ||
-				quest?.tasks.some(task => task.name === 'PLAY_ON_DESKTOP')
-			) {
-				const auth = lookupModuleWithImportedPath<{
-					default: { getToken(): string | null }
-				}>('stores/AuthenticationStore.tsx')[0]?.default
-				const token = auth?.getToken()
-				if (!token)
-					throw new Error('Sign in to Discord before starting this quest.')
-				await sendDesktopHeartbeat(
-					(...args) => callNativeMethod('wolfie.questify.heartbeat', args),
-					questId,
-					applicationId,
-					terminal,
-					token,
-					activity ? activityStreamKey() : undefined,
-				)
-				await refreshQuests()
-				return
-			}
-			const api = actions()
-			if (!api)
-				throw new Error('Quest actions are unavailable. Open Quests first.')
-			return callQuestHeartbeat(Dispatcher, questId, () =>
-				api.sendHeartbeat({ questId, applicationId, terminal }),
+			const activity = readQuests()
+				.quests.find(quest => quest.id === questId)
+				?.tasks.some(task => task.name === 'PLAY_ACTIVITY')
+			// Always native: a rejected request through Discord's own client logs the user out.
+			const auth = lookupModuleWithImportedPath<{
+				default: { getToken(): string | null }
+			}>('stores/AuthenticationStore.tsx')[0]?.default
+			const token = auth?.getToken()
+			if (!token)
+				throw new Error('Sign in to Discord before starting this quest.')
+			await sendDesktopHeartbeat(
+				(...args) => callNativeMethod('wolfie.questify.heartbeat', args),
+				questId,
+				applicationId,
+				terminal,
+				token,
+				activity ? activityStreamKey() : undefined,
 			)
+			await refreshQuests()
 		}),
 })

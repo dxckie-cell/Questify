@@ -13,6 +13,20 @@ import { callQuestAction } from './requests'
 import type { Settings } from '../settings/config'
 
 let settings = defaults
+let requestLog: string[] = []
+let writeRequestLog: ((log: string) => void) | undefined
+// Debug aid: persisted so it can be read after Discord logs the user out.
+export function setRequestLog(write?: (log: string) => void, initial = '') {
+	writeRequestLog = write
+	requestLog = initial ? initial.split('\n') : []
+}
+function logRequest(line: string) {
+	requestLog = [
+		...requestLog.slice(-7),
+		`${new Date().toTimeString().slice(0, 8)} ${line}`,
+	]
+	writeRequestLog?.(requestLog.join('\n'))
+}
 let reportRequestError: ((error: unknown) => void) | undefined
 export function setCompletionErrorReporter(
 	reporter?: (error: unknown) => void,
@@ -70,10 +84,11 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 		signal.addEventListener('abort', abort, { once: true })
 	})
 }
-async function request(action: () => Promise<unknown>) {
+async function request(label: string, action: () => Promise<unknown>) {
 	let timer: ReturnType<typeof setTimeout> | undefined
+	logRequest(`${label} sending`)
 	try {
-		return await Promise.race([
+		const result = await Promise.race([
 			action(),
 			new Promise<never>((_, reject) => {
 				timer = setTimeout(
@@ -87,10 +102,13 @@ async function request(action: () => Promise<unknown>) {
 				)
 			}),
 		])
+		logRequest(`${label} ok`)
+		return result
 	} catch (error) {
 		// Report only the formatted error, never request headers or raw responses.
 		const message =
 			error instanceof Error ? error.message : 'Quest request failed.'
+		logRequest(`${label} failed: ${message}`)
 		reportRequestError?.(new Error(`[Questify request] ${message}`))
 		throw error
 	} finally {
@@ -111,7 +129,7 @@ export const completion = createCompletionController({
 	wallNow: () => Date.now(),
 	wait,
 	video: (id, progress) =>
-		request(async () => {
+		request(`video ${id}`, async () => {
 			const api = actions()
 			if (!api)
 				throw new Error('Quest actions are unavailable. Open Quests first.')
@@ -122,10 +140,12 @@ export const completion = createCompletionController({
 			if (task && progress >= task.target) await refreshQuests()
 		}),
 	heartbeat: (questId, applicationId, terminal) =>
-		request(async () => {
-			const activity = readQuests()
-				.quests.find(quest => quest.id === questId)
-				?.tasks.some(task => task.name === 'PLAY_ACTIVITY')
+		request(`heartbeat ${questId}`, async () => {
+			const tasks = readQuests().quests.find(quest => quest.id === questId)?.tasks
+			const activity = tasks?.some(task => task.name === 'PLAY_ACTIVITY')
+			logRequest(
+				`heartbeat tasks=${tasks?.map(task => task.name).join(',') ?? 'unknown'} terminal=${terminal}`,
+			)
 			// Always native: a rejected request through Discord's own client logs the user out.
 			const auth = lookupModuleWithImportedPath<{
 				default: { getToken(): string | null }

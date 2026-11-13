@@ -302,6 +302,9 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						/>
 					))}
 				</TableRowGroup>
+				<TableRowGroup title="Request log (debug)">
+					<TableRow label={settings.requestLog || 'No requests yet'} />
+				</TableRowGroup>
 				<TableRowGroup title="Hide individual quests">
 					{quests.map(quest => (
 						<TableRow

@@ -18,6 +18,7 @@ export type Settings = {
 	resumeInterrupted: boolean
 	autoTypes: Record<string, boolean>
 	resumeByAccount: Record<string, { updatedAt: number; questIds: string[] }>
+	requestLog: string
 }
 export const defaults: Settings = {
 	warningVersion: 0,
@@ -33,6 +34,7 @@ export const defaults: Settings = {
 	resumeInterrupted: false,
 	autoTypes: {},
 	resumeByAccount: {},
+	requestLog: '',
 }
 export function normalizeSettings(
 	value: Partial<Settings> | undefined,

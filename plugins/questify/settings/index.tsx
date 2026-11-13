@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Linking, ScrollView } from 'react-native'
 import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
+import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
 import { readQuests, refreshQuests } from '../quests/store'
 import { normalizeSettings, QuestTypes } from './config'
@@ -32,6 +33,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 		}
 	})
 	const [error, setError] = useState('')
+	const [webOpen, setWebOpen] = useState(false)
 	useEffect(() => {
 		let disposed = false
 		void refreshQuests()
@@ -65,6 +67,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 				(Number.isFinite(a.expiresAt) ? a.expiresAt : Infinity) -
 				(Number.isFinite(b.expiresAt) ? b.expiresAt : Infinity),
 		)
+	if (webOpen) return <WebRunner onClose={() => setWebOpen(false)} />
 	return (
 		<ScrollView
 			style={{ flex: 1 }}
@@ -266,6 +269,13 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}
 						/>
 					))}
+				</TableRowGroup>
+				<TableRowGroup title="Web quest runner">
+					<TableRow
+						label="Open web quest runner"
+						subLabel="Runs quests in a separate discord.com login inside the app, so the app itself stays signed in."
+						onPress={() => setWebOpen(true)}
+					/>
 				</TableRowGroup>
 				<TableRowGroup title="Quests">
 					{!!error && <TableRow label={error} />}

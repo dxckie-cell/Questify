@@ -57,7 +57,7 @@ function actions() {
 		),
 	)[0]
 }
-// Any voice channel works as the stream key target, same as the desktop quest scripts.
+// Every non-video quest heartbeats with a call stream key (any DM or voice channel works), like Qwester.
 function activityStreamKey(): string {
 	const channels = Stores.ChannelStore as
 		| { getSortedPrivateChannels?(): { id: string }[] }
@@ -142,7 +142,6 @@ export const completion = createCompletionController({
 	heartbeat: (questId, applicationId, terminal) =>
 		request(`heartbeat ${questId}`, async () => {
 			const tasks = readQuests().quests.find(quest => quest.id === questId)?.tasks
-			const activity = tasks?.some(task => task.name === 'PLAY_ACTIVITY')
 			logRequest(
 				`heartbeat tasks=${tasks?.map(task => task.name).join(',') ?? 'unknown'} terminal=${terminal}`,
 			)
@@ -159,7 +158,7 @@ export const completion = createCompletionController({
 				applicationId,
 				terminal,
 				token,
-				activity ? activityStreamKey() : undefined,
+				activityStreamKey(),
 			)
 			await refreshQuests()
 		}),

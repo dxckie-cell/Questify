@@ -1,4 +1,4 @@
-import * as react from '@valenced/react'
+import { afterJSX } from '@valenced/react/jsx-runtime'
 import {
 	cloneElement,
 	useEffect,
@@ -115,13 +115,6 @@ function Host() {
 
 let unpatch: (() => void) | undefined
 export function startBackgroundRunner(probe: unknown): string {
-	const afterJSX = (react as { afterJSX?: unknown }).afterJSX as
-		| ((
-				type: unknown,
-				hook: (element: ReactElement) => ReactElement,
-		  ) => () => void)
-		| undefined
-	if (!afterJSX) return 'afterJSX is unavailable in this Valenced version.'
 	const content = fiberChain(probe).find(entry => entry.name === 'NavigationContent')
 	if (!content) return 'NavigationContent was not found above this screen.'
 	enabled = true

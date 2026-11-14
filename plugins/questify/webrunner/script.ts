@@ -4,8 +4,9 @@ export const USER_AGENT =
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Discord/1.0.0 Chrome/120.0.0.0 Electron/28.0.0 Safari/537.36'
 
 // The desktop user agent forces Discord's desktop layout, so fit a desktop-width viewport (pinch to zoom).
+// Re-asserted on a timer because Discord's page resets the viewport on some loads.
 export const BEFORE_LOAD = `Object.defineProperty(navigator,'platform',{get:function(){return 'Win32'},configurable:true});
-(function(){function fit(){var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';(document.head||document.documentElement).appendChild(m)}m.content='width=1100,user-scalable=yes'}fit();document.addEventListener('DOMContentLoaded',fit)})();true;`
+(function(){var want='width=1100,user-scalable=yes';function fit(){var root=document.head||document.documentElement;if(!root)return;var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';root.appendChild(m)}if(m.content!==want)m.content=want}fit();document.addEventListener('DOMContentLoaded',fit);setInterval(fit,500)})();true;`
 
 export const STOP_SCRIPT = `window.__questStop=true;true;`
 
@@ -91,23 +92,29 @@ finally{window.__questRunning=false}})();
 })();true;`
 
 // Hands the web session's own token to the plugin so it can keep sending heartbeats
-// after this screen closes. Retries until the web client has loaded and logged in.
+// after this screen closes. Polls until the web client has loaded and logged in, and
+// reports why it has not found a token yet.
 export const TOKEN_SCRIPT = `(function(){
 if(window.__questTokenTimer){return}
-var tries=0;
+var tries=0,last='';
+function report(text){if(text!==last){last=text;window.ReactNativeWebView.postMessage(JSON.stringify({type:'tokenState',data:text}))}}
+function stop(){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0}
 window.__questTokenTimer=setInterval(function(){
 try{
-if(++tries>90){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0;return}
+if(++tries>300){report('gave up after 10 minutes. Reopen this screen.');stop();return}
+if(!window.webpackChunkdiscord_app){report('waiting for Discord to load');return}
 var orig=window.$;delete window.$;
 var req=window.webpackChunkdiscord_app.push([[Symbol()],{},function(r){return r}]);
 window.webpackChunkdiscord_app.pop();
 if(orig)window.$=orig;
-var mods=Object.values(req.c),keys=['A','Ay','ZP'];
+var mods=Object.values(req.c),keys=['A','Ay','ZP'],found=false;
 for(var i=0;i<mods.length;i++){var ex=mods[i]&&mods[i].exports;if(!ex)continue;
 var cands=[ex].concat(keys.map(function(k){return ex[k]}));
 for(var c=0;c<cands.length;c++){var m=cands[c];
-if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'&&typeof m.isAuthenticated==='function'){
+if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'){
+found=true;
 var t=m.getToken();
-if(typeof t==='string'&&t.length>40){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0;window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}}}}
-}catch(e){}
+if(typeof t==='string'&&/^[A-Za-z0-9_-]{20,}[.][A-Za-z0-9_-]{5,}[.][A-Za-z0-9_-]{20,}$/.test(t)){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}}}}
+report(found?'login store found, but you are not logged in yet':'this Discord web version has no login store the plugin can read')
+}catch(e){report('error: '+(e&&e.message))}
 },2000)})();true;`

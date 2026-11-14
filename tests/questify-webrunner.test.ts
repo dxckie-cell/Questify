@@ -65,9 +65,8 @@ test('token script posts the web session token once the auth store is found', as
 		auth: {
 			exports: {
 				A: {
-					getToken: () => 'x'.repeat(60),
+					getToken: () => `${'a'.repeat(24)}.${'b'.repeat(6)}.${'c'.repeat(27)}`,
 					getId: () => '1',
-					isAuthenticated: () => true,
 				},
 			},
 		},
@@ -86,5 +85,10 @@ test('token script posts the web session token once the auth store is found', as
 		},
 		() => {},
 	)
-	expect(messages).toEqual([{ type: 'token', data: 'x'.repeat(60) }])
+	expect(messages).toEqual([
+		{
+			type: 'token',
+			data: `${'a'.repeat(24)}.${'b'.repeat(6)}.${'c'.repeat(27)}`,
+		},
+	])
 })

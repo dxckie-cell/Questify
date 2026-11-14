@@ -14,7 +14,7 @@ import type { WebHandle } from './webview'
 
 type Row = { name: string; progress: number; target: number; completed: boolean }
 type Message = {
-	type: 'list' | 'update' | 'status' | 'error' | 'token'
+	type: 'list' | 'update' | 'status' | 'error' | 'token' | 'tokenState'
 	data: unknown
 }
 
@@ -27,6 +27,7 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 	const [status, setStatus] = useState('')
 	const [error, setError] = useState('')
 	const [linked, setLinked] = useState(false)
+	const [tokenState, setTokenState] = useState('waiting for the page')
 	const message = (raw: string) => {
 		let parsed: Message
 		try {
@@ -46,6 +47,7 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 			setRows(rows => ({ ...rows, [row.id]: row }))
 		} else if (type === 'status') setStatus(String(data))
 		else if (type === 'error') setError(String(data))
+		else if (type === 'tokenState') setTokenState(String(data))
 		else if (type === 'token' && typeof data === 'string') {
 			setWebToken(data)
 			setLinked(true)
@@ -83,7 +85,7 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 				<Text style={{ color }}>
 					{linked
 						? 'Web session linked. Auto-complete quests from the Quests menu; they keep running after you leave this screen.'
-						: 'Web session not linked yet. Log in below.'}
+						: `Web session not linked: ${tokenState}.`}
 				</Text>
 				{Object.values(rows).map(row => (
 					<Text key={row.id} style={{ color }}>

@@ -1,12 +1,22 @@
 import { Design } from '@valenced/discord/design'
 import { useMemo, useRef, useState } from 'react'
 import { Text, View } from 'react-native'
-import { BEFORE_LOAD, RUN_SCRIPT, STOP_SCRIPT, USER_AGENT } from './script'
+import { setWebToken } from '../completion/service'
+import {
+	BEFORE_LOAD,
+	RUN_SCRIPT,
+	STOP_SCRIPT,
+	TOKEN_SCRIPT,
+	USER_AGENT,
+} from './script'
 import { resolveWebView } from './webview'
 import type { WebHandle } from './webview'
 
 type Row = { name: string; progress: number; target: number; completed: boolean }
-type Message = { type: 'list' | 'update' | 'status' | 'error'; data: unknown }
+type Message = {
+	type: 'list' | 'update' | 'status' | 'error' | 'token'
+	data: unknown
+}
 
 const color = '#dbdee1'
 
@@ -16,6 +26,7 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 	const [rows, setRows] = useState<Record<string, Row & { id: string }>>({})
 	const [status, setStatus] = useState('')
 	const [error, setError] = useState('')
+	const [linked, setLinked] = useState(false)
 	const message = (raw: string) => {
 		let parsed: Message
 		try {
@@ -35,6 +46,10 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 			setRows(rows => ({ ...rows, [row.id]: row }))
 		} else if (type === 'status') setStatus(String(data))
 		else if (type === 'error') setError(String(data))
+		else if (type === 'token' && typeof data === 'string') {
+			setWebToken(data)
+			setLinked(true)
+		}
 	}
 	return (
 		<View style={{ flex: 1 }}>
@@ -65,6 +80,11 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 					Log in to discord.com below, accept a quest in the Quests page, then
 					press Run quests.
 				</Text>
+				<Text style={{ color }}>
+					{linked
+						? 'Web session linked. Auto-complete quests from the Quests menu; they keep running after you leave this screen.'
+						: 'Web session not linked yet. Log in below.'}
+				</Text>
 				{Object.values(rows).map(row => (
 					<Text key={row.id} style={{ color }}>
 						{row.name}: {row.progress}/{row.target}
@@ -82,6 +102,7 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 					containerStyle={{ flex: 1 }}
 					userAgent={USER_AGENT}
 					injectedJavaScriptBeforeContentLoaded={BEFORE_LOAD}
+					injectedJavaScript={TOKEN_SCRIPT}
 					javaScriptEnabled
 					domStorageEnabled
 					sharedCookiesEnabled

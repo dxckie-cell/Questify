@@ -89,3 +89,25 @@ post('status',window.__questStop?'Stopped.':'All quests finished.')}
 catch(e){post('error',describe(e))}
 finally{window.__questRunning=false}})();
 })();true;`
+
+// Hands the web session's own token to the plugin so it can keep sending heartbeats
+// after this screen closes. Retries until the web client has loaded and logged in.
+export const TOKEN_SCRIPT = `(function(){
+if(window.__questTokenTimer){return}
+var tries=0;
+window.__questTokenTimer=setInterval(function(){
+try{
+if(++tries>90){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0;return}
+var orig=window.$;delete window.$;
+var req=window.webpackChunkdiscord_app.push([[Symbol()],{},function(r){return r}]);
+window.webpackChunkdiscord_app.pop();
+if(orig)window.$=orig;
+var mods=Object.values(req.c),keys=['A','Ay','ZP'];
+for(var i=0;i<mods.length;i++){var ex=mods[i]&&mods[i].exports;if(!ex)continue;
+var cands=[ex].concat(keys.map(function(k){return ex[k]}));
+for(var c=0;c<cands.length;c++){var m=cands[c];
+if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'&&typeof m.isAuthenticated==='function'){
+var t=m.getToken();
+if(typeof t==='string'&&t.length>40){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0;window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}}}}
+}catch(e){}
+},2000)})();true;`

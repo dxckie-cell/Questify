@@ -20,6 +20,7 @@ export type RunnerWebView = ComponentType<{
 	containerStyle: { flex: number }
 	userAgent: string
 	injectedJavaScriptBeforeContentLoaded: string
+	injectedJavaScript: string
 	javaScriptEnabled: boolean
 	domStorageEnabled: boolean
 	sharedCookiesEnabled: boolean

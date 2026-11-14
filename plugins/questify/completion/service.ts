@@ -1,4 +1,5 @@
 import { Stores } from '@valenced/discord/flux'
+import { lookupModuleWithImportedPath } from '@valenced/discord/utils/modules/finders'
 import { lookupModule } from '@valenced/modules/finders'
 import { withProps } from '@valenced/modules/finders/filters'
 import { callNativeMethod } from '@valenced/modules/native'
@@ -151,7 +152,14 @@ export const completion = createCompletionController({
 			)
 			// Heartbeats use the web runner's own login, never the app's token: if Discord
 			// rejects them, only that web session dies, not the app session.
-			const token = webToken
+			// Web token when linked; the app token is only safe for activity quests.
+			const token =
+				webToken ??
+				(tasks?.some(task => task.name === 'PLAY_ACTIVITY')
+					? lookupModuleWithImportedPath<{
+							default: { getToken(): string | null }
+						}>('stores/AuthenticationStore.tsx')[0]?.default.getToken()
+					: undefined)
 			if (!token)
 				throw new Error(
 					'Open the web quest runner in Questify settings and log in first.',

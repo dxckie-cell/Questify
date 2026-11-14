@@ -58,27 +58,30 @@ test('injected script completes an enrolled video quest through the web api', as
 	})
 })
 
-test('token script posts the web session token once the auth store is found', async () => {
+test('token script posts the web session token read from localStorage', async () => {
 	const { TOKEN_SCRIPT } = await import('../plugins/questify/webrunner/script')
 	const messages: { type: string; data: unknown }[] = []
-	const modules: Record<string, { exports: unknown }> = {
-		auth: {
-			exports: {
-				A: {
-					getToken: () => `${'a'.repeat(24)}.${'b'.repeat(6)}.${'c'.repeat(27)}`,
-					getId: () => '1',
-				},
-			},
-		},
-	}
 	const window: Record<string, unknown> = {
 		ReactNativeWebView: {
 			postMessage: (raw: string) => messages.push(JSON.parse(raw)),
 		},
-		webpackChunkdiscord_app: { push: () => ({ c: modules }), pop() {} },
+		document: {
+			body: { appendChild() {} },
+			createElement: () => ({
+				style: {},
+				remove() {},
+				contentWindow: {
+					localStorage: {
+						getItem: () =>
+							JSON.stringify(`${'a'.repeat(24)}.${'b'.repeat(6)}.${'c'.repeat(27)}`),
+					},
+				},
+			}),
+		},
 	}
-	new Function('window', 'setInterval', 'clearInterval', TOKEN_SCRIPT)(
+	new Function('window', 'document', 'setInterval', 'clearInterval', TOKEN_SCRIPT)(
 		window,
+		(window as { document: unknown }).document,
 		(callback: () => void) => {
 			callback()
 			return 1

@@ -91,9 +91,9 @@ catch(e){post('error',describe(e))}
 finally{window.__questRunning=false}})();
 })();true;`
 
-// Hands the web session's own token to the plugin so it can keep sending heartbeats
-// after this screen closes. Polls until the web client has loaded and logged in, and
-// reports why it has not found a token yet.
+// Hands the web session's own token to the plugin so heartbeats never use the
+// app's token. Discord's client hides localStorage.token, so read it through a
+// fresh iframe. Polls until the user has logged in.
 export const TOKEN_SCRIPT = `(function(){
 if(window.__questTokenTimer){return}
 var tries=0,last='';
@@ -102,20 +102,11 @@ function stop(){clearInterval(window.__questTokenTimer);window.__questTokenTimer
 window.__questTokenTimer=setInterval(function(){
 try{
 if(++tries>300){report('gave up after 10 minutes. Reopen this screen.');stop();return}
-if(!window.webpackChunkdiscord_app){report('waiting for Discord to load');return}
-var orig=window.$;delete window.$;
-var req=window.webpackChunkdiscord_app.push([[Symbol()],{},function(r){return r}]);
-window.webpackChunkdiscord_app.pop();
-if(orig)window.$=orig;
-var mods=Object.values(req.c),keys=['A','Ay','ZP'],shapes=[];
-for(var i=0;i<mods.length;i++){var ex=mods[i]&&mods[i].exports;if(!ex)continue;
-var cands=[ex].concat(keys.map(function(k){return ex[k]}));
-for(var c=0;c<cands.length;c++){var m=cands[c];
-if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'){
-var t=m.getToken();
-var plain=typeof t==='string'?t:(t&&typeof t==='object'?(typeof t.token==='string'?t.token:typeof t.value==='string'?t.value:null):null);
-if(plain&&plain.length>=50&&plain.split('.').length===3){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:plain}));return}
-shapes.push(t==null?'null':typeof t==='string'?('text, '+t.length+' chars, '+t.split('.').length+' parts'):(t&&typeof t.then==='function')?'promise':typeof t==='object'?('object with '+Object.getOwnPropertyNames(t).slice(0,8).join(',')+' / methods '+Object.getOwnPropertyNames(Object.getPrototypeOf(t)||{}).slice(0,8).join(',')):typeof t)}}}
-report(shapes.length?('login store returned '+shapes.join(' / ')+' instead of a token'):'this Discord web version has no login store the plugin can read')
+var f=document.createElement('iframe');f.style.display='none';document.body.appendChild(f);
+var raw=f.contentWindow.localStorage.getItem('token');f.remove();
+if(!raw){report('log in first');return}
+var t=JSON.parse(raw);
+if(typeof t==='string'&&t.split('.').length===3&&t.length>=50){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}
+report('token in an unexpected format')
 }catch(e){report('error: '+(e&&e.message))}
 },2000)})();true;`

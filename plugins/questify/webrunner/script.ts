@@ -8,7 +8,6 @@ export const USER_AGENT =
 export const BEFORE_LOAD = `Object.defineProperty(navigator,'platform',{get:function(){return 'Win32'},configurable:true});
 (function(){var want='width=1100,user-scalable=yes';function fit(){var root=document.head||document.documentElement;if(!root)return;var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';root.appendChild(m)}if(m.content!==want)m.content=want}fit();document.addEventListener('DOMContentLoaded',fit);setInterval(fit,500)})();true;`
 
-export const STOP_SCRIPT = `window.__questStop=true;true;`
 
 export const RUN_SCRIPT = `(function(){
 if(window.__questRunning){return}

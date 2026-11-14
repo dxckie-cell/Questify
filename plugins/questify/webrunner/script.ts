@@ -107,14 +107,14 @@ var orig=window.$;delete window.$;
 var req=window.webpackChunkdiscord_app.push([[Symbol()],{},function(r){return r}]);
 window.webpackChunkdiscord_app.pop();
 if(orig)window.$=orig;
-var mods=Object.values(req.c),keys=['A','Ay','ZP'],found=false;
+var mods=Object.values(req.c),keys=['A','Ay','ZP'],shapes=[];
 for(var i=0;i<mods.length;i++){var ex=mods[i]&&mods[i].exports;if(!ex)continue;
 var cands=[ex].concat(keys.map(function(k){return ex[k]}));
 for(var c=0;c<cands.length;c++){var m=cands[c];
 if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'){
-found=true;
 var t=m.getToken();
-if(typeof t==='string'&&/^[A-Za-z0-9_-]{20,}[.][A-Za-z0-9_-]{5,}[.][A-Za-z0-9_-]{20,}$/.test(t)){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}}}}
-report(found?'login store found, but you are not logged in yet':'this Discord web version has no login store the plugin can read')
+if(typeof t==='string'&&t.length>=50&&t.split('.').length===3){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}
+shapes.push(t==null?'null':typeof t==='string'?('text, '+t.length+' chars, '+t.split('.').length+' parts'):(t&&typeof t.then==='function')?'promise':typeof t)}}}
+report(shapes.length?('login store returned '+shapes.join(' / ')+' instead of a token'):'this Discord web version has no login store the plugin can read')
 }catch(e){report('error: '+(e&&e.message))}
 },2000)})();true;`

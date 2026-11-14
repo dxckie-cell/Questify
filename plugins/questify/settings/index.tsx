@@ -4,7 +4,6 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Linking, ScrollView } from 'react-native'
 import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
-import { startBackgroundRunner, stopBackgroundRunner } from '../webrunner/background'
 import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
 import { readQuests, refreshQuests } from '../quests/store'
@@ -276,15 +275,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						label="Open web quest runner"
 						subLabel="Runs quests in a separate discord.com login inside the app, so the app itself stays signed in."
 						onPress={() => setWebOpen(true)}
-					/>
-					<TableRow
-						label="Start background runner (experimental)"
-						subLabel="Experiment: toast layer. Runs in a hidden web view while you use Discord. Log in with the web runner first. Progress shows in the request log."
-						onPress={startBackgroundRunner}
-					/>
-					<TableRow
-						label="Stop background runner"
-						onPress={stopBackgroundRunner}
 					/>
 				</TableRowGroup>
 				<TableRowGroup title="Quests">

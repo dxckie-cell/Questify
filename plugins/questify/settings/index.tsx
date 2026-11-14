@@ -202,7 +202,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 				<TableRowGroup title="Automatically complete quest types">
 					<TableRow
 						label="Automatically queue accepted quests of selected types"
-						subLabel="Manual completion stays available for other supported types. Stream, console, and achievement quests are not supported yet."
+						subLabel="Manual completion stays available for other supported types. Activity achievements can be started individually. Game achievements, stream, and console quests are unsupported."
 					/>
 					{Object.entries(QuestTypes)
 						.filter(([type]) => type !== 'PLAY_ON_DESKTOP')

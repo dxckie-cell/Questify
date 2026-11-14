@@ -33,3 +33,49 @@ export async function callQuestAction(
 		throw questRequestError(error)
 	}
 }
+
+type Intercept = (response: unknown, retry: unknown, cancel: unknown) => boolean
+export type QuestHTTPOptions = {
+	url: string
+	body?: unknown
+	interceptResponse?: Intercept
+}
+export function protectQuestRequest(
+	method: 'get' | 'post',
+	options: QuestHTTPOptions,
+): QuestHTTPOptions {
+	if (
+		!(method === 'get'
+			? /^\/quests\/@me(?:\?|$)/.test(options.url)
+			: /^\/quests\/\d+\/video-progress(?:\?|$)/.test(options.url))
+	)
+		return options
+
+	return protectUnauthorized(options)
+}
+
+export function protectUnauthorized(
+	options: QuestHTTPOptions,
+): QuestHTTPOptions {
+	return {
+		...options,
+		interceptResponse(response, retry, cancel) {
+			if (
+				typeof response === 'object' &&
+				response !== null &&
+				'status' in response &&
+				response.status === 401 &&
+				typeof cancel === 'function'
+			) {
+				cancel(
+					Object.assign(new Error('Unauthorized'), {
+						status: 401,
+						body: 'body' in response ? response.body : undefined,
+					}),
+				)
+				return true
+			}
+			return options.interceptResponse?.(response, retry, cancel) ?? false
+		},
+	}
+}

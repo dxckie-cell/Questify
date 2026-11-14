@@ -7,6 +7,7 @@ import {
 	startBackgroundRunner,
 	stopBackgroundRunner,
 } from './webrunner/background'
+import { patchQuestHTTP } from './patches/quest-http'
 import { currentAccount, readQuests } from './quests/store'
 import { defaults, normalizeSettings } from './settings/config'
 import SettingsComponent from './settings/index'
@@ -19,6 +20,7 @@ export default plugin<{ jsonStorage: Settings }>({
 	jsonStorage: { load: true, default: defaults },
 	start({ cleanup, jsonStorage, plugin }) {
 		scheduleStartupWarning(cleanup, jsonStorage)
+		patchQuestHTTP(cleanup)
 		startCompletionLifecycle(cleanup, jsonStorage, error =>
 			plugin.reportError(error),
 		)

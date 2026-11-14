@@ -1,3 +1,4 @@
+import { ToastActionCreators } from '@valenced/discord/actions'
 import { Stores } from '@valenced/discord/flux'
 import { lookupModuleWithImportedPath } from '@valenced/discord/utils/modules/finders'
 import { lookupModule } from '@valenced/modules/finders'
@@ -7,6 +8,7 @@ import { AppState } from 'react-native'
 import { currentAccount, readQuests, refreshQuests } from '../quests/store'
 import { defaults } from '../settings/config'
 import { completionAllowed } from '../settings/warning-policy'
+import { completeActivityAchievement } from './achievement'
 import { createCompletionController } from './controller'
 import { sendDesktopHeartbeat } from './desktop-heartbeat'
 import { callQuestAction } from './requests'
@@ -122,8 +124,7 @@ export const completion = createCompletionController({
 	foreground: () => AppState.currentState === 'active',
 	quest: id => readQuests().quests.find(quest => quest.id === id),
 	supports: task =>
-		!!actions() &&
-		(task.name.startsWith('WATCH_VIDEO') || !!task.applicationId),
+		task.name.startsWith('WATCH_VIDEO') ? !!actions() : !!task.applicationId,
 	options: () => settings,
 	now: () => performance.now(),
 	wallNow: () => Date.now(),
@@ -137,32 +138,66 @@ export const completion = createCompletionController({
 			const task = readQuests()
 				.quests.find(quest => quest.id === id)
 				?.tasks.find(task => task.name.startsWith('WATCH_VIDEO'))
-			if (task && progress >= task.target) await refreshQuests()
+			if (task && progress >= task.target)
+				await request('quest refresh', refreshQuests)
 		}),
-	heartbeat: (questId, applicationId, terminal) =>
-		request(`heartbeat ${questId}`, async () => {
-			const tasks = readQuests().quests.find(quest => quest.id === questId)?.tasks
-			logRequest(
-				`heartbeat tasks=${tasks?.map(task => task.name).join(',') ?? 'unknown'} terminal=${terminal}`,
+	achievement: async (quest, task, active) => {
+		if (!task.applicationId) throw new Error('Quest Activity is unavailable.')
+		try {
+			await completeActivityAchievement(
+				task.applicationId,
+				quest.id,
+				task.target,
+				active,
 			)
+		} catch (error) {
+			reportRequestError?.(error)
+			if (active())
+				ToastActionCreators.open('QUESTIFY_ACHIEVEMENT_ERROR', {
+					text:
+						error instanceof Error
+							? error.message
+							: 'Activity achievement failed.',
+					variant: 'critical',
+				})
+			throw error
+		}
+		if (!active()) return
+		for (let attempt = 0; attempt < 3 && active(); attempt++) {
+			await request('quest refresh', refreshQuests)
+			const current = readQuests().quests.find(item => item.id === quest.id)
+			if (current?.status === 'completed' || current?.status === 'claimed') {
+				if (active())
+					ToastActionCreators.open('QUESTIFY_ACHIEVEMENT_DONE', {
+						text: 'Achievement complete. Claim your reward in Discord.',
+					})
+				return
+			}
+			if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1500))
+		}
+	},
+	heartbeat: (questId, applicationId, taskName, terminal) =>
+		request(`heartbeat ${taskName}`, async () => {
 			// Desktop-game heartbeats got the app logged out in testing; only activity
 			// quests are known safe. Games run through the web runner instead.
-			if (!tasks?.some(task => task.name === 'PLAY_ACTIVITY'))
+			if (taskName !== 'PLAY_ACTIVITY')
 				throw new Error(
 					'Only activity quests can run here. Use Settings > Web quest runner > Run quests.',
 				)
-			const token = lookupModuleWithImportedPath<{
+			const auth = lookupModuleWithImportedPath<{
 				default: { getToken(): string | null }
-			}>('stores/AuthenticationStore.tsx')[0]?.default.getToken()
-			if (!token) throw new Error('Not logged in.')
+			}>('stores/AuthenticationStore.tsx')[0]?.default
+			const token = auth?.getToken()
+			if (!token)
+				throw new Error('Sign in to Discord before starting this quest.')
 			await sendDesktopHeartbeat(
 				(...args) => callNativeMethod('wolfie.questify.heartbeat', args),
 				questId,
 				applicationId,
 				terminal,
 				token,
-				activityStreamKey(),
+				taskName === 'PLAY_ACTIVITY' ? activityStreamKey() : undefined,
 			)
-			await refreshQuests()
+			await request('quest refresh', refreshQuests)
 		}),
 })

@@ -39,12 +39,3 @@ export function fiberChain(instance: unknown): { name: string; type: unknown }[]
 	}
 	return chain
 }
-
-export function ancestorNames(instance: unknown): string[] {
-	try {
-		const names = fiberChain(instance).map(entry => entry.name)
-		return names.length ? names : ['no fiber on this view']
-	} catch (error) {
-		return [`error: ${error instanceof Error ? error.message : error}`]
-	}
-}

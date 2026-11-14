@@ -19,9 +19,6 @@ import type { WebHandle } from './webview'
 // Experiment: navigator content wraps every screen, so a hidden 1px web view added
 // there stays mounted while the user moves around Discord. Every navigator shares
 // that component type, so only the shallowest copy (the root stack) runs a web view.
-const tick =
-	"window.ReactNativeWebView.postMessage(JSON.stringify({type:'status',data:'tick '+new Date().toTimeString().slice(0,8)}));true;"
-
 const registry = new Map<object, number>()
 const listeners = new Set<() => void>()
 let version = 0
@@ -62,11 +59,9 @@ function Host() {
 		logRequest(`background host mounted, depth=${registry.get(id)}`)
 		const start = setTimeout(() => {
 			web.current?.injectJavaScript(RUN_SCRIPT)
-			web.current?.injectJavaScript(tick)
 		}, 8000)
 		const retry = setInterval(() => {
 			web.current?.injectJavaScript(RUN_SCRIPT)
-			web.current?.injectJavaScript(tick)
 		}, 30000)
 		return () => {
 			clearTimeout(start)

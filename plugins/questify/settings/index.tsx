@@ -2,8 +2,7 @@ import Page from '@valenced/components/Page'
 import { Design } from '@valenced/discord/design'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Linking, ScrollView, View } from 'react-native'
-import { completion } from '../completion/service'
-import { ancestorNames } from '../webrunner/ancestors'
+import { completion, logRequest } from '../completion/service'
 import { startBackgroundRunner, stopBackgroundRunner } from '../webrunner/background'
 import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
@@ -35,7 +34,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 	})
 	const [error, setError] = useState('')
 	const [webOpen, setWebOpen] = useState(false)
-	const [scan, setScan] = useState('')
 	const probe = useRef<unknown>(null)
 	useEffect(() => {
 		let disposed = false
@@ -210,7 +208,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						onValueChange={value =>
 							warnBeforeSetting(jsonStorage, 'backgroundRunner', value, () =>
 								jsonStorage.set({ backgroundRunner: value }).then(() => {
-									if (value) setScan(startBackgroundRunner(probe.current))
+									if (value) logRequest(startBackgroundRunner(probe.current))
 									else stopBackgroundRunner()
 								}),
 							)
@@ -272,33 +270,10 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						/>
 					))}
 				</TableRowGroup>
-				<TableRowGroup title="Host discovery (debug)">
-					<View ref={probe as never} collapsable={false} />
-					<TableRow
-						label="List parent components"
-						subLabel="Reads the mounted component tree above this screen. Safe: no module scan."
-						onPress={() => {
-							const names = ancestorNames(probe.current)
-							setScan(`${names.length}: ${names.join(' < ')}`.slice(0, 4000))
-						}}
-					/>
-					<TableRow
-						label="Start background runner now"
-						subLabel="Hidden web view in the app's navigator. Log in with the web runner first; progress shows in the request log."
-						onPress={() => setScan(startBackgroundRunner(probe.current))}
-					/>
-					<TableRow
-						label="Stop background runner"
-						onPress={() => {
-							stopBackgroundRunner()
-							setScan('Stopped.')
-						}}
-					/>
-					{!!scan && <TableRow label={scan} />}
-				</TableRowGroup>
 				<TableRowGroup title="Request log (debug)">
 					<TableRow label={settings.requestLog || 'No requests yet'} />
 				</TableRowGroup>
+			<View ref={probe as never} collapsable={false} />
 			</Page>
 		</ScrollView>
 	)

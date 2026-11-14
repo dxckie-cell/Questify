@@ -20,7 +20,7 @@ export function setRequestLog(write?: (log: string) => void, initial = '') {
 	writeRequestLog = write
 	requestLog = initial ? initial.split('\n') : []
 }
-function logRequest(line: string) {
+export function logRequest(line: string) {
 	requestLog = [
 		...requestLog.slice(-7),
 		`${new Date().toTimeString().slice(0, 8)} ${line}`,

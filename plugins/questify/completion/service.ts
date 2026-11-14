@@ -123,8 +123,14 @@ export const completion = createCompletionController({
 	account: currentAccount,
 	foreground: () => AppState.currentState === 'active',
 	quest: id => readQuests().quests.find(quest => quest.id === id),
+	// Desktop-game heartbeats from the app got the account logged out; the web runner
+	// handles them.
 	supports: task =>
-		task.name.startsWith('WATCH_VIDEO') ? !!actions() : !!task.applicationId,
+		task.name === 'PLAY_ON_DESKTOP'
+			? false
+			: task.name.startsWith('WATCH_VIDEO')
+				? !!actions()
+				: !!task.applicationId,
 	options: () => settings,
 	now: () => performance.now(),
 	wallNow: () => Date.now(),

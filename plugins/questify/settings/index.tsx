@@ -198,6 +198,24 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}}
 						/>
 					))}
+					<TableRow
+						label="Open web quest runner"
+						subLabel="Runs quests in a separate discord.com login inside the app, so the app itself stays signed in."
+						onPress={() => setWebOpen(true)}
+					/>
+					<TableSwitchRow
+						label="Start background runner with Discord"
+						subLabel="Runs web-login quests in a hidden web view whenever Discord is open. Log in with the web runner first."
+						value={settings.backgroundRunner}
+						onValueChange={value =>
+							warnBeforeSetting(jsonStorage, 'backgroundRunner', value, () =>
+								jsonStorage.set({ backgroundRunner: value }).then(() => {
+									if (value) setScan(startBackgroundRunner(probe.current))
+									else stopBackgroundRunner()
+								}),
+							)
+						}
+					/>
 				</TableRowGroup>
 				<TableRowGroup title="Automatically complete quest types">
 					<TableRow
@@ -218,13 +236,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}
 						/>
 					))}
-				</TableRowGroup>
-				<TableRowGroup title="Web quest runner">
-					<TableRow
-						label="Open web quest runner"
-						subLabel="Runs quests in a separate discord.com login inside the app, so the app itself stays signed in."
-						onPress={() => setWebOpen(true)}
-					/>
 				</TableRowGroup>
 				<TableRowGroup title="Quests">
 					{!!error && <TableRow label={error} />}
@@ -270,19 +281,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							const names = ancestorNames(probe.current)
 							setScan(`${names.length}: ${names.join(' < ')}`.slice(0, 4000))
 						}}
-					/>
-					<TableSwitchRow
-						label="Start background runner with Discord"
-						subLabel="Runs web-login quests in a hidden web view whenever Discord is open. Log in with the web runner first."
-						value={settings.backgroundRunner}
-						onValueChange={value =>
-							warnBeforeSetting(jsonStorage, 'backgroundRunner', value, () =>
-								jsonStorage.set({ backgroundRunner: value }).then(() => {
-									if (value) setScan(startBackgroundRunner(probe.current))
-									else stopBackgroundRunner()
-								}),
-							)
-						}
 					/>
 					<TableRow
 						label="Start background runner now"

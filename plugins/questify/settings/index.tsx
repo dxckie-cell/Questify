@@ -1,9 +1,10 @@
 import Page from '@valenced/components/Page'
 import { Design } from '@valenced/discord/design'
-import { useEffect, useState, useSyncExternalStore } from 'react'
-import { Linking, ScrollView } from 'react-native'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Linking, ScrollView, View } from 'react-native'
 import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
+import { ancestorNames } from '../webrunner/ancestors'
 import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
 import { readQuests, refreshQuests } from '../quests/store'
@@ -34,6 +35,8 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 	})
 	const [error, setError] = useState('')
 	const [webOpen, setWebOpen] = useState(false)
+	const [scan, setScan] = useState('')
+	const probe = useRef<unknown>(null)
 	useEffect(() => {
 		let disposed = false
 		void refreshQuests()
@@ -311,6 +314,18 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}
 						/>
 					))}
+				</TableRowGroup>
+				<TableRowGroup title="Host discovery (debug)">
+					<View ref={probe as never} collapsable={false} />
+					<TableRow
+						label="List parent components"
+						subLabel="Reads the mounted component tree above this screen. Safe: no module scan."
+						onPress={() => {
+							const names = ancestorNames(probe.current)
+							setScan(`${names.length}: ${names.join(' < ')}`.slice(0, 4000))
+						}}
+					/>
+					{!!scan && <TableRow label={scan} />}
 				</TableRowGroup>
 				<TableRowGroup title="Request log (debug)">
 					<TableRow label={settings.requestLog || 'No requests yet'} />

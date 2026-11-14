@@ -5,6 +5,7 @@ import { Linking, ScrollView, View } from 'react-native'
 import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
 import { ancestorNames } from '../webrunner/ancestors'
+import { startBackgroundRunner, stopBackgroundRunner } from '../webrunner/background'
 import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
 import { readQuests, refreshQuests } from '../quests/store'
@@ -323,6 +324,18 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						onPress={() => {
 							const names = ancestorNames(probe.current)
 							setScan(`${names.length}: ${names.join(' < ')}`.slice(0, 4000))
+						}}
+					/>
+					<TableRow
+						label="Start background runner (experimental)"
+						subLabel="Hidden web view in the app's navigator. Log in with the web runner first; progress shows in the request log."
+						onPress={() => setScan(startBackgroundRunner(probe.current))}
+					/>
+					<TableRow
+						label="Stop background runner"
+						onPress={() => {
+							stopBackgroundRunner()
+							setScan('Stopped.')
 						}}
 					/>
 					{!!scan && <TableRow label={scan} />}

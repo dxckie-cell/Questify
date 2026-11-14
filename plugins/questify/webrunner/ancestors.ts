@@ -29,16 +29,21 @@ function nameOf(type: unknown): string | undefined {
 	}
 }
 
+export function fiberChain(instance: unknown): { name: string; type: unknown }[] {
+	const chain: { name: string; type: unknown }[] = []
+	let fiber = fiberOf(instance as Record<string, unknown>)
+	for (let i = 0; fiber && i < 400; i++, fiber = fiber.return ?? undefined) {
+		const type = fiber.elementType ?? fiber.type
+		const name = nameOf(type)
+		if (name) chain.push({ name, type })
+	}
+	return chain
+}
+
 export function ancestorNames(instance: unknown): string[] {
 	try {
-		let fiber = fiberOf(instance as Record<string, unknown>)
-		if (!fiber) return ['no fiber on this view']
-		const names: string[] = []
-		for (let i = 0; fiber && i < 150; i++, fiber = fiber.return ?? undefined) {
-			const name = nameOf(fiber.elementType ?? fiber.type)
-			if (name && name !== names.at(-1)) names.push(name)
-		}
-		return names
+		const names = fiberChain(instance).map(entry => entry.name)
+		return names.length ? names : ['no fiber on this view']
 	} catch (error) {
 		return [`error: ${error instanceof Error ? error.message : error}`]
 	}

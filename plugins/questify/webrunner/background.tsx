@@ -1,5 +1,5 @@
 import { lookupModule } from '@valenced/modules/finders'
-import { withName } from '@valenced/modules/finders/filters'
+import { withName, withProps } from '@valenced/modules/finders/filters'
 import { afterJSX } from '@valenced/react/jsx-runtime'
 import {
 	cloneElement,
@@ -117,21 +117,32 @@ function Host() {
 
 // SafeAreaProviderCompat wraps every native stack, so the root stack's copy stays
 // mounted while the user moves around Discord.
-function findHostParent(): unknown {
-	const [found] = lookupModule(withName('SafeAreaProviderCompat'))
-	if (typeof found === 'function') return found
-	const record = found as Record<string, unknown> | undefined
-	return record?.SafeAreaProviderCompat ?? record?.default
+function findHostParent(probe?: unknown): unknown {
+	for (const filter of [
+		withProps<Record<string, unknown>>('SafeAreaProviderCompat'),
+		withName('SafeAreaProviderCompat'),
+	]) {
+		const [found] = lookupModule(filter)
+		if (typeof found === 'function') return found
+		const record = found as Record<string, unknown> | undefined
+		const component = record?.SafeAreaProviderCompat ?? record?.default
+		if (typeof component === 'function') return component
+	}
+	// The screen's own component tree always has the live type.
+	return probe
+		? fiberChain(probe).find(entry => entry.name === 'SafeAreaProviderCompat')
+				?.type
+		: undefined
 }
 
 let unpatch: (() => void) | undefined
-export function startBackgroundRunner(): string {
+export function startBackgroundRunner(probe?: unknown): string {
 	if (unpatch) {
 		enabled = true
 		change()
 		return 'Already running.'
 	}
-	const parent = findHostParent()
+	const parent = findHostParent(probe)
 	if (!parent) return 'SafeAreaProviderCompat was not found.'
 	enabled = true
 	unpatch = afterJSX(parent, element =>

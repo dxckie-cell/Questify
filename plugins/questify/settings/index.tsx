@@ -333,7 +333,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 						onValueChange={value =>
 							warnBeforeSetting(jsonStorage, 'backgroundRunner', value, () =>
 								jsonStorage.set({ backgroundRunner: value }).then(() => {
-									if (value) setScan(startBackgroundRunner())
+									if (value) setScan(startBackgroundRunner(probe.current))
 									else stopBackgroundRunner()
 								}),
 							)
@@ -342,7 +342,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 					<TableRow
 						label="Start background runner now"
 						subLabel="Hidden web view in the app's navigator. Log in with the web runner first; progress shows in the request log."
-						onPress={() => setScan(startBackgroundRunner())}
+						onPress={() => setScan(startBackgroundRunner(probe.current))}
 					/>
 					<TableRow
 						label="Stop background runner"

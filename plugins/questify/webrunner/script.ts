@@ -113,8 +113,9 @@ var cands=[ex].concat(keys.map(function(k){return ex[k]}));
 for(var c=0;c<cands.length;c++){var m=cands[c];
 if(m&&typeof m.getToken==='function'&&typeof m.getId==='function'){
 var t=m.getToken();
-if(typeof t==='string'&&t.length>=50&&t.split('.').length===3){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}
-shapes.push(t==null?'null':typeof t==='string'?('text, '+t.length+' chars, '+t.split('.').length+' parts'):(t&&typeof t.then==='function')?'promise':typeof t)}}}
+var plain=typeof t==='string'?t:(t&&typeof t==='object'?(typeof t.token==='string'?t.token:typeof t.value==='string'?t.value:null):null);
+if(plain&&plain.length>=50&&plain.split('.').length===3){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:plain}));return}
+shapes.push(t==null?'null':typeof t==='string'?('text, '+t.length+' chars, '+t.split('.').length+' parts'):(t&&typeof t.then==='function')?'promise':typeof t==='object'?('object with '+Object.getOwnPropertyNames(t).slice(0,8).join(',')+' / methods '+Object.getOwnPropertyNames(Object.getPrototypeOf(t)||{}).slice(0,8).join(',')):typeof t)}}}
 report(shapes.length?('login store returned '+shapes.join(' / ')+' instead of a token'):'this Discord web version has no login store the plugin can read')
 }catch(e){report('error: '+(e&&e.message))}
 },2000)})();true;`

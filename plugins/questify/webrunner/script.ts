@@ -90,23 +90,3 @@ post('status',window.__questStop?'Stopped.':'All quests finished.')}
 catch(e){post('error',describe(e))}
 finally{window.__questRunning=false}})();
 })();true;`
-
-// Hands the web session's own token to the plugin so heartbeats never use the
-// app's token. Discord's client hides localStorage.token, so read it through a
-// fresh iframe. Polls until the user has logged in.
-export const TOKEN_SCRIPT = `(function(){
-if(window.__questTokenTimer){return}
-var tries=0,last='';
-function report(text){if(text!==last){last=text;window.ReactNativeWebView.postMessage(JSON.stringify({type:'tokenState',data:text}))}}
-function stop(){clearInterval(window.__questTokenTimer);window.__questTokenTimer=0}
-window.__questTokenTimer=setInterval(function(){
-try{
-if(++tries>300){report('gave up after 10 minutes. Reopen this screen.');stop();return}
-var f=document.createElement('iframe');f.style.display='none';document.body.appendChild(f);
-var raw=f.contentWindow.localStorage.getItem('token');f.remove();
-if(!raw){report('log in first');return}
-var t=JSON.parse(raw);
-if(typeof t==='string'&&t.split('.').length===3&&t.length>=50){stop();window.ReactNativeWebView.postMessage(JSON.stringify({type:'token',data:t}));return}
-report('token in an unexpected format')
-}catch(e){report('error: '+(e&&e.message))}
-},2000)})();true;`

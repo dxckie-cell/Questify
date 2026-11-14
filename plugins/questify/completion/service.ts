@@ -13,11 +13,6 @@ import { callQuestAction } from './requests'
 import type { Settings } from '../settings/config'
 
 let settings = defaults
-// In memory only, never persisted or logged.
-let webToken: string | undefined
-export function setWebToken(token?: string) {
-	webToken = token
-}
 let requestLog: string[] = []
 let writeRequestLog: ((log: string) => void) | undefined
 // Debug aid: persisted so it can be read after Discord logs the user out.
@@ -150,20 +145,16 @@ export const completion = createCompletionController({
 			logRequest(
 				`heartbeat tasks=${tasks?.map(task => task.name).join(',') ?? 'unknown'} terminal=${terminal}`,
 			)
-			// Heartbeats use the web runner's own login, never the app's token: if Discord
-			// rejects them, only that web session dies, not the app session.
-			// Web token when linked; the app token is only safe for activity quests.
-			const token =
-				webToken ??
-				(tasks?.some(task => task.name === 'PLAY_ACTIVITY')
-					? lookupModuleWithImportedPath<{
-							default: { getToken(): string | null }
-						}>('stores/AuthenticationStore.tsx')[0]?.default.getToken()
-					: undefined)
-			if (!token)
+			// Desktop-game heartbeats got the app logged out in testing; only activity
+			// quests are known safe. Games run through the web runner instead.
+			if (!tasks?.some(task => task.name === 'PLAY_ACTIVITY'))
 				throw new Error(
-					'Open the web quest runner in Questify settings and log in first.',
+					'Only activity quests can run here. Use Settings > Web quest runner > Run quests.',
 				)
+			const token = lookupModuleWithImportedPath<{
+				default: { getToken(): string | null }
+			}>('stores/AuthenticationStore.tsx')[0]?.default.getToken()
+			if (!token) throw new Error('Not logged in.')
 			await sendDesktopHeartbeat(
 				(...args) => callNativeMethod('wolfie.questify.heartbeat', args),
 				questId,

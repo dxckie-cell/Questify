@@ -1,3 +1,5 @@
+import { lookupModule } from '@valenced/modules/finders'
+import { withName } from '@valenced/modules/finders/filters'
 import { afterJSX } from '@valenced/react/jsx-runtime'
 import {
 	cloneElement,
@@ -113,22 +115,35 @@ function Host() {
 	)
 }
 
+// SafeAreaProviderCompat wraps every native stack, so the root stack's copy stays
+// mounted while the user moves around Discord.
+function findHostParent(): unknown {
+	const [found] = lookupModule(withName('SafeAreaProviderCompat'))
+	if (typeof found === 'function') return found
+	const record = found as Record<string, unknown> | undefined
+	return record?.SafeAreaProviderCompat ?? record?.default
+}
+
 let unpatch: (() => void) | undefined
-export function startBackgroundRunner(probe: unknown): string {
-	const content = fiberChain(probe).find(entry => entry.name === 'NavigationContent')
-	if (!content) return 'NavigationContent was not found above this screen.'
+export function startBackgroundRunner(): string {
+	if (unpatch) {
+		enabled = true
+		change()
+		return 'Already running.'
+	}
+	const parent = findHostParent()
+	if (!parent) return 'SafeAreaProviderCompat was not found.'
 	enabled = true
-	if (!unpatch)
-		unpatch = afterJSX(content.type, element =>
-			cloneElement(
-				element,
-				{},
-				(element.props as { children?: unknown }).children as never,
-				<Host key="questify-background" />,
-			),
-		)
+	unpatch = afterJSX(parent, element =>
+		cloneElement(
+			element,
+			{},
+			(element.props as { children?: unknown }).children as never,
+			<Host key="questify-background" />,
+		),
+	)
 	change()
-	return 'Started. Press Back and move around Discord, then check the request log.'
+	return 'Started. Move around Discord, then check the request log.'
 }
 export function stopBackgroundRunner() {
 	enabled = false

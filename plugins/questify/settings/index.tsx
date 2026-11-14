@@ -326,10 +326,23 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							setScan(`${names.length}: ${names.join(' < ')}`.slice(0, 4000))
 						}}
 					/>
+					<TableSwitchRow
+						label="Start background runner with Discord"
+						subLabel="Runs web-login quests in a hidden web view whenever Discord is open. Log in with the web runner first."
+						value={settings.backgroundRunner}
+						onValueChange={value =>
+							warnBeforeSetting(jsonStorage, 'backgroundRunner', value, () =>
+								jsonStorage.set({ backgroundRunner: value }).then(() => {
+									if (value) setScan(startBackgroundRunner())
+									else stopBackgroundRunner()
+								}),
+							)
+						}
+					/>
 					<TableRow
-						label="Start background runner (experimental)"
+						label="Start background runner now"
 						subLabel="Hidden web view in the app's navigator. Log in with the web runner first; progress shows in the request log."
-						onPress={() => setScan(startBackgroundRunner(probe.current))}
+						onPress={() => setScan(startBackgroundRunner())}
 					/>
 					<TableRow
 						label="Stop background runner"

@@ -15,6 +15,7 @@ export type Settings = {
 	accelerateVideo: boolean
 	preventVideoPausing: boolean
 	simultaneous: boolean
+	backgroundRunner: boolean
 	resumeInterrupted: boolean
 	autoTypes: Record<string, boolean>
 	resumeByAccount: Record<string, { updatedAt: number; questIds: string[] }>
@@ -31,6 +32,7 @@ export const defaults: Settings = {
 	accelerateVideo: false,
 	preventVideoPausing: false,
 	simultaneous: false,
+	backgroundRunner: false,
 	resumeInterrupted: false,
 	autoTypes: {},
 	resumeByAccount: {},

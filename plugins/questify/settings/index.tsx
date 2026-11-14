@@ -2,7 +2,6 @@ import Page from '@valenced/components/Page'
 import { Design } from '@valenced/discord/design'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Linking, ScrollView, View } from 'react-native'
-import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
 import { ancestorNames } from '../webrunner/ancestors'
 import { startBackgroundRunner, stopBackgroundRunner } from '../webrunner/background'
@@ -199,69 +198,15 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}}
 						/>
 					))}
-					<TableRow
-						label="Complete supported quests"
-						subLabel="Accept quests in Discord first. Video and play quests run while Discord stays open. Rewards are claimed manually."
-						onPress={() => {
-							try {
-								for (const quest of quests)
-									if (completion.canQueue(quest)) completion.queue(quest)
-								setError('')
-							} catch (error) {
-								setError(
-									error instanceof Error
-										? error.message
-										: 'Could not queue quests.',
-								)
-							}
-						}}
-					/>
-					<TableRow
-						label="Stop all quests"
-						onPress={() => completion.stopAll()}
-					/>
-					{quests
-						.filter(
-							quest => completionTask(quest) || completion.state(quest.id),
-						)
-						.map(quest => {
-							const state = completion.state(quest.id)
-							const running =
-								state?.kind === 'running' || state?.kind === 'queued'
-							return (
-								<TableRow
-									key={quest.id}
-									label={`${running ? 'Stop' : 'Complete'} ${quest.name}`}
-									subLabel={
-										state
-											? 'message' in state
-												? state.message
-												: `${state.kind}: ${Math.floor(state.progress)} / ${state.target}`
-											: 'Start this quest'
-									}
-									onPress={() => {
-										try {
-											if (running) completion.stop(quest.id)
-											else completion.queue(quest)
-											setError('')
-										} catch (error) {
-											setError(
-												error instanceof Error
-													? error.message
-													: 'Could not start quest.',
-											)
-										}
-									}}
-								/>
-							)
-						})}
 				</TableRowGroup>
 				<TableRowGroup title="Automatically complete quest types">
 					<TableRow
 						label="Automatically queue accepted quests of selected types"
 						subLabel="Manual completion stays available for other supported types. Stream, console, and achievement quests are not supported yet."
 					/>
-					{Object.entries(QuestTypes).map(([type, label]) => (
+					{Object.entries(QuestTypes)
+						.filter(([type]) => type !== 'PLAY_ON_DESKTOP')
+						.map(([type, label]) => (
 						<TableSwitchRow
 							key={type}
 							label={label}

@@ -3,7 +3,9 @@
 export const USER_AGENT =
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Discord/1.0.0 Chrome/120.0.0.0 Electron/28.0.0 Safari/537.36'
 
-export const BEFORE_LOAD = `Object.defineProperty(navigator,'platform',{get:function(){return 'Win32'},configurable:true});true;`
+// The desktop user agent forces Discord's desktop layout, so fit a desktop-width viewport (pinch to zoom).
+export const BEFORE_LOAD = `Object.defineProperty(navigator,'platform',{get:function(){return 'Win32'},configurable:true});
+(function(){function fit(){var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';(document.head||document.documentElement).appendChild(m)}m.content='width=1100,user-scalable=yes'}fit();document.addEventListener('DOMContentLoaded',fit)})();true;`
 
 export const STOP_SCRIPT = `window.__questStop=true;true;`
 

@@ -24,6 +24,9 @@ export type RunnerWebView = ComponentType<{
 	domStorageEnabled: boolean
 	sharedCookiesEnabled: boolean
 	thirdPartyCookiesEnabled: boolean
+	scalesPageToFit: boolean
+	setBuiltInZoomControls: boolean
+	setDisplayZoomControls: boolean
 	originWhitelist: string[]
 	onMessage(event: { nativeEvent: { data: string } }): void
 	onError(): void

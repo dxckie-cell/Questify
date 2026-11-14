@@ -86,6 +86,9 @@ export default function WebRunner({ onClose }: { onClose(): void }) {
 					domStorageEnabled
 					sharedCookiesEnabled
 					thirdPartyCookiesEnabled
+					scalesPageToFit
+					setBuiltInZoomControls
+					setDisplayZoomControls={false}
 					originWhitelist={['https://*']}
 					onMessage={event => message(event.nativeEvent.data)}
 					onError={() => setError('Could not load discord.com.')}

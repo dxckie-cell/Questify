@@ -4,7 +4,6 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Linking, ScrollView } from 'react-native'
 import { completionTask } from '../completion/controller'
 import { completion } from '../completion/service'
-import { scanComponents } from '../webrunner/discover'
 import WebRunner from '../webrunner/screen'
 import { questVisible } from '../quests/filtering'
 import { readQuests, refreshQuests } from '../quests/store'
@@ -35,7 +34,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 	})
 	const [error, setError] = useState('')
 	const [webOpen, setWebOpen] = useState(false)
-	const [scan, setScan] = useState('')
 	useEffect(() => {
 		let disposed = false
 		void refreshQuests()
@@ -313,19 +311,6 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 							}
 						/>
 					))}
-				</TableRowGroup>
-				<TableRowGroup title="Host discovery (debug)">
-					<TableRow
-						label="Scan components"
-						subLabel="Lists app-layer component names for the background runner experiment."
-						onPress={() => {
-							setScan('Scanning...')
-							scanComponents(names =>
-								setScan(`${names.length}: ${names.join(', ')}`.slice(0, 3000)),
-							)
-						}}
-					/>
-					{!!scan && <TableRow label={scan} />}
 				</TableRowGroup>
 				<TableRowGroup title="Request log (debug)">
 					<TableRow label={settings.requestLog || 'No requests yet'} />

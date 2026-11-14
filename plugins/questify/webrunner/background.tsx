@@ -1,4 +1,4 @@
-import { AlertActionCreators } from '@valenced/discord/actions'
+import { ToastActionCreators } from '@valenced/discord/actions'
 import { useEffect, useMemo, useRef } from 'react'
 import { View } from 'react-native'
 import { logRequest } from '../completion/service'
@@ -8,8 +8,9 @@ import type { WebHandle } from './webview'
 
 const key = 'QUESTIFY_BACKGROUND_RUNNER'
 
-// Experiment: the alert host stays mounted on every screen, so a hidden WebView
-// rendered there should keep running while the user browses Discord.
+// Experiment: the toast layer floats over every screen without blocking touches
+// (the alert layer dims and blocks them). Which prop the toast renders as custom
+// content is unknown, so offer the element under the likely names.
 function Host() {
 	const WebView = useMemo(resolveWebView, [])
 	const web = useRef<WebHandle>(null)
@@ -70,9 +71,23 @@ function Host() {
 	)
 }
 
+type ToastApi = {
+	open(key: string, props: Record<string, unknown>): void
+	close?(key: string): void
+	dismiss?(key: string): void
+}
+const toasts = ToastActionCreators as unknown as ToastApi
 export function startBackgroundRunner() {
-	AlertActionCreators.openAlert(key, <Host />)
+	const element = <Host />
+	toasts.open(key, {
+		text: 'Quest runner active',
+		duration: 2_147_483_647,
+		content: element,
+		children: element,
+		component: element,
+	})
 }
 export function stopBackgroundRunner() {
-	AlertActionCreators.dismissAlert(key)
+	toasts.close?.(key)
+	toasts.dismiss?.(key)
 }

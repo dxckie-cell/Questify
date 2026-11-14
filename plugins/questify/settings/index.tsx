@@ -279,7 +279,7 @@ export default function SettingsComponent({ api: { jsonStorage } }: Props) {
 					/>
 					<TableRow
 						label="Start background runner (experimental)"
-						subLabel="Runs in a hidden web view while you use Discord. Log in with the web runner first. Progress shows in the request log."
+						subLabel="Experiment: toast layer. Runs in a hidden web view while you use Discord. Log in with the web runner first. Progress shows in the request log."
 						onPress={startBackgroundRunner}
 					/>
 					<TableRow

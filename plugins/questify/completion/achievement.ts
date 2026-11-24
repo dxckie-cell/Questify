@@ -140,7 +140,16 @@ export async function completeActivityAchievement(
 						)
 					? ': Discord returned no usable ticket'
 					: ''
-		failure = new Error(`Achievement failed while ${stage}${status}.`)
+		// Native Activity errors carry only a step name and an HTTP status.
+		const nativeDetail =
+			error instanceof Error
+				? error.message.match(
+						/Activity (?:\w+\/?\w* failed \(HTTP \d+\)|did not accept achievement progress|authorization returned an invalid token|response too large)/,
+					)?.[0]
+				: undefined
+		failure = new Error(
+			`Achievement failed while ${stage}${status}${nativeDetail ? `: ${nativeDetail}` : ''}.`,
+		)
 	} finally {
 		try {
 			if (createdGrant && currentAccount() === account) {
